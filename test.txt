@@ -1,0 +1,102 @@
+#include <SoftwareSerial.h>
+SoftwareSerial ss(3, 4);//RXPin = 2, TXPin = 3;
+
+int FLOW;
+int period = 1000;
+int count=0;
+unsigned long time_now = 0;
+int i=0;
+
+int val=0;
+char rec[15];
+boolean started=false;
+void  receive1();  
+
+const byte FM = 2;
+int R=13;
+void blink() 
+{
+  count++;
+}
+
+void setup() 
+{
+  pinMode(FM, INPUT_PULLUP);
+  attachInterrupt(digitalPinToInterrupt(FM), blink, CHANGE);
+  pinMode(R, OUTPUT);
+  digitalWrite(R,LOW);
+  Serial.begin(9600);
+  ss.begin(9600);
+  Serial.print("Water Flow Measurement");
+  delay(1000);  
+}
+
+void loop() 
+{
+    receive1();  
+    if(millis() > time_now + period)
+      {
+          i++;
+          Serial.println(i);
+      }
+  
+    if(i>=9)
+      {
+        Serial.println("OK"); 
+        FLOW=count;
+        Serial.print("FLOW:");Serial.println(FLOW); 
+        ss.print("FLOW:");ss.println(FLOW);             
+        i=0;
+        delay(1000);
+        count=0;
+      }
+      delay(1000);
+}
+void serialEvent() 
+{
+  while (Serial.available()) 
+  {
+    // get the new byte:
+      if(started == true)
+     {
+       rec[val] = (char)Serial.read(); 
+       if(rec[0]=='*')
+       {
+        if(val<=2)
+          {
+            val++;
+          }
+       }
+  
+     }
+   }
+}
+void  receive1()
+{
+   unsigned char i=0;   
+  if(val>2)
+  {
+   started = false;
+    if(rec[1]=='R')
+        {
+         if(rec[2]=='N')
+             {
+                digitalWrite(R,LOW);
+          //    Serial.println("f");
+             }
+        }
+      if(rec[1]=='R')
+        {
+         if(rec[2]=='F')
+             {
+             
+                digitalWrite(R, HIGH);  
+           //   Serial.println("b");
+             }
+        }
+     
+    val=0;
+     started = true;
+}
+}
+
